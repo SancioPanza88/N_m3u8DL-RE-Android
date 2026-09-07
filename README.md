@@ -25,6 +25,20 @@ espongono via ARCVM:
 - `--binary-merge`, `--skip-merge`, DASH MPD base (`SegmentTemplate`/`SegmentList`)
 - `HwCapDetector.probe()` → report nel pannello "Verifica HW Chromebook"
 
+## Mux automatico (video + audio + sottotitoli)
+
+I flussi tipo vixcloud arrivano con **video, audio e sottotitoli separati**: l'app li
+scarica tutti e li unisce da sola, senza farlo a mano:
+
+- spunta **"Unisci automaticamente video + audio + sottotitoli in un unico file"**
+  (attiva di default) → ottieni `<nome>.mp4` + `<nome>.it.srt` fianco a fianco
+  (tutti i player li caricano in automatico)
+- audio: traccia del gruppo del video, sottotitoli: preferenza **italiano**
+- mux via `MediaMuxer` **senza ricodifica** (veloce, non scalda il Chromebook);
+  se un codec non è supportato, tiene comunque i file separati (`*_video.ts`,
+  `*_audio.ts`) invece di fallire
+- se spegni la spunta → modalità "file separati" come il programma per PC
+
 ## Build
 
 [![Android CI (Chromebook Plus)](https://github.com/SancioPanza88/N_m3u8DL-RE-Android/actions/workflows/build.yml/badge.svg)](https://github.com/SancioPanza88/N_m3u8DL-RE-Android/actions/workflows/build.yml)

@@ -56,4 +56,26 @@ class HlsParserTest {
         val pl = HlsParser.parse(live, "https://example.com/live.m3u8")
         assertTrue(pl.isLive)
     }
+
+    @Test
+    fun masterWithMediaGroups_parsesAudioAndSubtitles() {
+        // Struttura tipica dei flussi vixcloud: video + audio separato + subs.
+        val master = """
+            #EXTM3U
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="it",NAME="Italiano",DEFAULT=YES,URI="audio_it.m3u8"
+            #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",LANGUAGE="en",NAME="English",URI="audio_en.m3u8"
+            #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",LANGUAGE="it",NAME="Italiano",DEFAULT=YES,URI="subs_it.m3u8"
+            #EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080,AUDIO="audio",SUBTITLES="subs"
+            video.m3u8
+        """.trimIndent()
+        val pl = HlsParser.parse(master, "https://vixcloud.example/playlist/x?token=abc")
+        assertTrue(pl.isMaster)
+        assertEquals(2, pl.audioTracks.size)
+        assertEquals(1, pl.subtitleTracks.size)
+        val audio = HlsParser.selectAudioTrack(pl.audioTracks, "audio")
+        assertEquals("it", audio!!.language)
+        assertEquals("https://vixcloud.example/playlist/audio_it.m3u8", audio.uri)
+        val subs = HlsParser.selectSubtitleTrack(pl.subtitleTracks, "subs", "it")
+        assertEquals("https://vixcloud.example/playlist/subs_it.m3u8", subs!!.uri)
+    }
 }

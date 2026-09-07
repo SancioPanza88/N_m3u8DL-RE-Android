@@ -22,10 +22,22 @@ data class Segment(
     val isMap: Boolean = false
 )
 
+/** Traccia EXT-X-MEDIA (audio o sottotitoli) di una master playlist HLS. */
+data class MediaTrack(
+    val type: String = "AUDIO", // AUDIO | SUBTITLES
+    val groupId: String = "",
+    val name: String = "",
+    val language: String = "",
+    val uri: String = "",
+    val isDefault: Boolean = false
+)
+
 data class Playlist(
     val isMaster: Boolean,
     val variants: List<StreamVariant> = emptyList(),
     val segments: List<Segment> = emptyList(),
+    val audioTracks: List<MediaTrack> = emptyList(),
+    val subtitleTracks: List<MediaTrack> = emptyList(),
     val targetDuration: Int = 0,
     val isLive: Boolean = false
 )
@@ -41,7 +53,11 @@ data class DownloadOptions(
     val binaryMerge: Boolean = false,
     val customHlsKeyHex: String? = null,
     val customHlsIvHex: String? = null,
-    val maxSpeedKbps: Int = 0
+    val maxSpeedKbps: Int = 0,
+    // Mux automatico (come -M di N_m3u8DL-RE): unisce video+audio+subs in un unico file.
+    val muxAfterDone: Boolean = true,
+    val includeAudio: Boolean = true,
+    val includeSubtitles: Boolean = true
 )
 
 fun defaultThreadCountForChromebookPlus(): Int {

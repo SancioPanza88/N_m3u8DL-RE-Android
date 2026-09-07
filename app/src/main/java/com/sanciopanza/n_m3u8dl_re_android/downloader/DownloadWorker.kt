@@ -15,12 +15,14 @@ class DownloadWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         val saveName = inputData.getString(KEY_SAVE) ?: "video"
         val threads = inputData.getInt(KEY_THREADS, defaultThreadCountForChromebookPlus())
         val headersRaw = inputData.getString(KEY_HEADERS) ?: ""
+        val mux = inputData.getBoolean(KEY_MUX, true)
         val facade = DownloaderFacade(applicationContext)
         val opts = DownloadOptions(
             url = url,
             saveName = saveName.ifBlank { "video" },
             threadCount = threads,
-            headers = SettingsStore.parseHeaders(headersRaw)
+            headers = SettingsStore.parseHeaders(headersRaw),
+            muxAfterDone = mux
         )
         return when (val r = facade.run(opts, { done, total ->
             setProgressAsync(workDataOf(KEY_DONE to done, KEY_TOTAL to total))
@@ -37,6 +39,7 @@ class DownloadWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         const val KEY_SAVE = "save"
         const val KEY_THREADS = "threads"
         const val KEY_HEADERS = "headers"
+        const val KEY_MUX = "mux"
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"
         const val KEY_OUT = "out"

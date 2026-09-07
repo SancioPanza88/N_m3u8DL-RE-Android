@@ -2,7 +2,7 @@ package com.sanciopanza.n_m3u8dl_re_android.downloader
 
 /**
  * Parser HLS M3U8 minimale, fedele alla semantica di N_m3u8DL-RE:
- * - master playlist con #EXT-X-STREAM-INF
+ * - master playlist con #EXT-X-STREAM-INF + #EXT-X-MEDIA (audio/sottotitoli)
  * - media playlist con #EXTINF + #EXT-X-KEY (AES-128) + #EXT-X-MAP + #EXT-X-ENDLIST
  * Pure Kotlin (testabile in JVM unit test).
  */
@@ -15,6 +15,8 @@ object HlsParser {
         }
         val variants = mutableListOf<StreamVariant>()
         val segments = mutableListOf<Segment>()
+        val audioTracks = mutableListOf<MediaTrack>()
+        val subtitleTracks = mutableListOf<MediaTrack>()
         var isMaster = false
         var targetDuration = 0
         var hasEndList = false
@@ -34,6 +36,21 @@ object HlsParser {
         while (i < lines.size) {
             val line = lines[i]
             when {
+                line.startsWith("#EXT-X-MEDIA") -> {
+                    val type = extractAttr(line, "TYPE").uppercase().ifEmpty { "AUDIO" }
+                    val track = MediaTrack(
+                        type = type,
+                        groupId = extractAttr(line, "GROUP-ID"),
+                        name = extractAttr(line, "NAME"),
+                        language = extractAttr(line, "LANGUAGE").lowercase(),
+                        uri = extractAttr(line, "URI").takeIf { it.isNotEmpty() }
+                            ?.let { resolveUrl(baseUrl, it) } ?: "",
+                        isDefault = extractAttr(line, "DEFAULT").equals("YES", ignoreCase = true)
+                    )
+                    if (track.uri.isNotEmpty()) {
+                        if (type == "SUBTITLES") subtitleTracks.add(track) else audioTracks.add(track)
+                    }
+                }
                 line.startsWith("#EXT-X-STREAM-INF") -> {
                     isMaster = true
                     pendingBandwidth = extractAttrLong(line, "BANDWIDTH")
@@ -124,6 +141,8 @@ object HlsParser {
             isMaster = isMaster && variants.isNotEmpty(),
             variants = variants.toList(),
             segments = segments.toList(),
+            audioTracks = audioTracks.toList(),
+            subtitleTracks = subtitleTracks.toList(),
             targetDuration = targetDuration,
             isLive = !hasEndList && segments.isNotEmpty()
         )
@@ -136,6 +155,34 @@ object HlsParser {
             compareBy<StreamVariant> { it.bandwidth }
                 .thenBy { parseResolutionArea(it.resolution) }
         ).lastOrNull()
+    }
+
+    /**
+     * Scelta traccia audio: gruppo della variante video -> default -> prima disponibile.
+     * Equivalente a -sa/--auto-select dell'originale.
+     */
+    fun selectAudioTrack(tracks: List<MediaTrack>, groupId: String): MediaTrack? {
+        if (tracks.isEmpty()) return null
+        val inGroup = tracks.filter { it.groupId == groupId || groupId.isEmpty() }
+        val pool = if (inGroup.isNotEmpty()) inGroup else tracks
+        return pool.firstOrNull { it.isDefault } ?: pool.firstOrNull()
+    }
+
+    /**
+     * Scelta sottotitoli: preferisce la lingua richiesta (default "it", come i flussi
+     * vixcloud lang=it), poi default, poi prima disponibile.
+     */
+    fun selectSubtitleTrack(
+        tracks: List<MediaTrack>,
+        groupId: String,
+        preferLang: String = "it"
+    ): MediaTrack? {
+        if (tracks.isEmpty()) return null
+        val inGroup = tracks.filter { it.groupId == groupId || groupId.isEmpty() }
+        val pool = if (inGroup.isNotEmpty()) inGroup else tracks
+        return pool.firstOrNull { it.language == preferLang }
+            ?: pool.firstOrNull { it.isDefault }
+            ?: pool.firstOrNull()
     }
 
     fun parseResolutionArea(res: String): Long {

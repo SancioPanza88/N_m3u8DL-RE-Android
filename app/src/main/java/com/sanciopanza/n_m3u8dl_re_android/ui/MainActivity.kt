@@ -2,6 +2,7 @@ package com.sanciopanza.n_m3u8dl_re_android.ui
 
 import android.os.Bundle
 import android.view.inputmethod.EditorInfo
+import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var saveInput: TextInputEditText
     private lateinit var threadsInput: TextInputEditText
     private lateinit var headersInput: TextInputEditText
+    private lateinit var muxCheck: CheckBox
     private lateinit var logView: TextView
     private lateinit var progress: ProgressBar
     private lateinit var store: SettingsStore
@@ -59,6 +61,12 @@ class MainActivity : AppCompatActivity() {
         threadsInput = addField("Thread (default: core Chromebook)")
         headersInput = addField("Headers opzionali  (es. Cookie: x)")
 
+        muxCheck = CheckBox(this).apply {
+            text = "Unisci automaticamente video + audio + sottotitoli in un unico file (consigliato)"
+            isChecked = true
+        }
+        root.addView(muxCheck)
+
         val btnDownload = MaterialButton(this).apply { text = "Scarica" }
         val btnHw = MaterialButton(this).apply { text = "Verifica HW Chromebook" }
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -86,6 +94,7 @@ class MainActivity : AppCompatActivity() {
             val s = store.loadSaveName()
             threadsInput.setText(t.toString())
             saveInput.setText(s)
+            muxCheck.isChecked = store.loadMux()
         }
 
         btnHw.setOnClickListener {
@@ -106,19 +115,28 @@ class MainActivity : AppCompatActivity() {
             val threads = threadsInput.text?.toString()?.trim()?.toIntOrNull()
                 ?: defaultThreadCountForChromebookPlus()
             val headers = SettingsStore.parseHeaders(headersInput.text?.toString().orEmpty())
+            val mux = muxCheck.isChecked
             lifecycleScope.launch {
-                store.saveAll(threads, save, headersInput.text?.toString().orEmpty())
-                appendLog("Avvio: $url\nThread=$threads save=$save\n")
+                store.saveAll(threads, save, headersInput.text?.toString().orEmpty(), mux)
+                appendLog("Avvio: $url\nThread=$threads save=$save mux=${if (mux) "ON (unico file)" else "OFF (separati)"}\n")
                 progress.progress = 0
-                val opts = DownloadOptions(url = url, saveName = save, threadCount = threads, headers = headers)
+                val opts = DownloadOptions(
+                    url = url,
+                    saveName = save,
+                    threadCount = threads,
+                    headers = headers,
+                    muxAfterDone = mux
+                )
                 when (val r = facade.run(opts, { done, total ->
                     runOnUiThread {
                         progress.max = total.coerceAtLeast(1)
                         progress.progress = done
                     }
                 })) {
-                    is DownloaderFacade.Result.Ok ->
-                        appendLog("OK: ${r.segments} segmenti → ${r.file.absolutePath}\n${r.log}\n")
+                    is DownloaderFacade.Result.Ok -> {
+                        val subs = r.subsFile?.let { "\n+Sottotitoli: ${it.absolutePath}" } ?: ""
+                        appendLog("OK: ${r.segments} segmenti → ${r.file.absolutePath}$subs\n${r.log}\n")
+                    }
                     is DownloaderFacade.Result.Err ->
                         appendLog("FALLITO: ${r.message}\n")
                 }

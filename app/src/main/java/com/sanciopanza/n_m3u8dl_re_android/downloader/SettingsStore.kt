@@ -1,6 +1,7 @@
 package com.sanciopanza.n_m3u8dl_re_android.downloader
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -16,6 +17,7 @@ class SettingsStore(private val context: Context) {
     private val KEY_THREADS = intPreferencesKey("thread_count")
     private val KEY_SAVE_NAME = stringPreferencesKey("save_name")
     private val KEY_HEADERS = stringPreferencesKey("headers")
+    private val KEY_MUX = booleanPreferencesKey("mux_after_done")
 
     suspend fun loadThreads(): Int =
         context.dataStore.data.map { it[KEY_THREADS] ?: defaultThreadCountForChromebookPlus() }.first()
@@ -27,11 +29,15 @@ class SettingsStore(private val context: Context) {
     suspend fun loadSaveName(): String =
         context.dataStore.data.map { it[KEY_SAVE_NAME] ?: "video" }.first()
 
-    suspend fun saveAll(threads: Int, saveName: String, headersRaw: String) {
+    suspend fun loadMux(): Boolean =
+        context.dataStore.data.map { it[KEY_MUX] ?: true }.first()
+
+    suspend fun saveAll(threads: Int, saveName: String, headersRaw: String, muxAfterDone: Boolean = true) {
         context.dataStore.edit {
             it[KEY_THREADS] = threads
             it[KEY_SAVE_NAME] = saveName
             it[KEY_HEADERS] = headersRaw
+            it[KEY_MUX] = muxAfterDone
         }
     }
 
