@@ -129,7 +129,8 @@ class SegmentDownloader(
         // --custom-hls-method NONE (forzato da HlsParser: keyUri nullo ma method NONE):
         // gestito dal chiamante azzerando keyUri. Qui: --key KID:KEY / KEY singola.
         val mapped: ByteArray? = seg.keyUri?.let { kUri ->
-            keyMap[kUri.lowercase()] ?: keyMap["__single"]?.let { hexOrRaw(it) }
+            keyMap[kUri.lowercase()]?.let { hexOrRaw(it) }
+                ?: keyMap["__single"]?.let { hexOrRaw(it) }
         } ?: keyMap["__single"]?.let { hexOrRaw(it) }
         // Se nessun KEY e nessuna custom key => chiaro.
         if (seg.keyUri == null && customKey == null && mapped == null) return bytes
