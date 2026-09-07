@@ -130,8 +130,8 @@ class DownloaderFacade(
         }
 
         // Master: video migliore + audio del suo gruppo + sottotitoli (pref. italiano).
-        val best = if (opts.autoSelectBest) HlsParser.selectBestVariant(pl.variants)
-        else pl.variants.firstOrNull()
+        val best = (if (opts.autoSelectBest) HlsParser.selectBestVariant(pl.variants)
+        else pl.variants.firstOrNull())
             ?: return Result.Err("Master playlist senza varianti")
         log.appendLine("HLS master: ${pl.variants.size} varianti, video bw=${best.bandwidth} ${best.resolution}")
         val audioTrack = if (opts.includeAudio) {
