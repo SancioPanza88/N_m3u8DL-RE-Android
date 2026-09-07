@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">N_m3u8DL-RE Android</string>
+    <string name="hint_url">Incolla URL M3U8 / MPD / ISM…</string>
+    <string name="action_download">Scarica</string>
+    <string name="action_probe_hw">Verifica HW Chromebook</string>
+    <string name="title_hw">Accelerazione hardware</string>
+    <string name="default_save_name">video</string>
+</resources>

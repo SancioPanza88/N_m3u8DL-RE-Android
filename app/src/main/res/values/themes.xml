@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.NM3u8DLRE" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/seed</item>
+    </style>
+    <color name="seed">#006495</color>
+</resources>
