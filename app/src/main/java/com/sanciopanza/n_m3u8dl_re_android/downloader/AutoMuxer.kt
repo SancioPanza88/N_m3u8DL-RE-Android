@@ -115,6 +115,21 @@ object AutoMuxer {
         return map
     }
 
+    /**
+     * I flag di MediaExtractor e MediaCodec hanno gli stessi valori numerici ma
+     * lint li considera costanti diverse: mappatura esplicita.
+     */
+    private fun mapSampleFlags(sampleFlags: Int): Int {
+        var out = 0
+        if (sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) {
+            out = out or MediaCodec.BUFFER_FLAG_KEY_FRAME
+        }
+        if (sampleFlags and MediaExtractor.SAMPLE_FLAG_PARTIAL_FRAME != 0) {
+            out = out or MediaCodec.BUFFER_FLAG_PARTIAL_FRAME
+        }
+        return out
+    }
+
     private class SrcState(
         val extractor: MediaExtractor,
         val indexMap: Map<Int, Int>
@@ -134,7 +149,7 @@ object AutoMuxer {
                     info.offset = 0
                     info.size = sz
                     info.presentationTimeUs = extractor.sampleTime
-                    info.flags = extractor.sampleFlags
+                    info.flags = mapSampleFlags(extractor.sampleFlags)
                     sampleTime = extractor.sampleTime
                     muxerTrack = indexMap[extractor.sampleTrackIndex] ?: 0
                     true
@@ -176,7 +191,7 @@ object AutoMuxer {
             info.size = size
             try {
                 info.presentationTimeUs = extractor.sampleTime
-                info.flags = extractor.sampleFlags
+                info.flags = mapSampleFlags(extractor.sampleFlags)
                 muxer.writeSampleData(muxerTrack, buffer, info)
             } catch (_: Throwable) {
                 // Vai avanti: un campione guasto non deve buttare tutto il file.
