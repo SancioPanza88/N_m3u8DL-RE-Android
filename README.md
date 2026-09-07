@@ -39,6 +39,23 @@ scarica tutti e li unisce da sola, senza farlo a mano:
   `*_audio.ts`) invece di fallire
 - se spegni la spunta → modalità "file separati" come il programma per PC
 
+## Tabella parità opzioni (stesse flag dell'originale)
+
+Ogni campo della UI riporta la flag CLI; il pulsante **"Comando CLI"** genera il
+comando `N_m3u8DL-RE` equivalente. Mappatura completa:
+
+| Originale | Android | Note |
+|---|---|---|
+| `<input>`, `--base-url`, `-H`, `--http-request-timeout`, `--task-start-at`, `--append-url-params` | uguali | `--custom-proxy` supportato (HTTP) |
+| `--save-name`, `--save-pattern`, `--sub-format`, `--write-meta-json`, `--no-log`, `--log-level` | uguali | pattern con `<SaveName> <Resolution> <Bandwidth> <Codecs> <Language> <MediaType> <GroupId> <Ext>` |
+| `--thread-count`, `--download-retry-count`, `-mt`, `-R`, `--skip-download`, `--skip-merge`, `--check-segments-count`, `--binary-merge`, `--del-after-done`, `--custom-range`, `--ad-keyword`, `--allow-hls-multi-ext-map` | uguali | range `0-10`/`10-`/`-99` e `MM:SS-MM:SS` |
+| `--auto-select`, `-sv/-sa/-ss`, `-dv/-da/-ds`, `--sub-only` | uguali | select/drop = regex su banda/ris/codec/lingua/nome/url |
+| `--auto-subtitle-fix`, `--live-fix-vtt-by-audio` | uguali | fix VTT normalizza timestamp (best effort) |
+| `--key`, `--key-text-file`, `--custom-hls-method`, `--custom-hls-key`, `--custom-hls-iv` | uguali | DASH CENC Widevine/PlayReady non supportati su Android senza licenza (limite noto) |
+| `--live-perform-as-vod`, `--live-real-time-merge`, `--live-keep-segments`, `--live-record-limit`, `--live-wait-time`, `--live-take-count` | uguali | pipe-mux ffmpeg non disponibile su Android (merge TS diretto) |
+| `-M format=mp4`, `keep`, `skip_sub`, `--mux-import` | uguali | `format=mkv`/ffmpeg/mkvmerge → fallback mp4 HW; subs come sidecar `.srt/.vtt` |
+| `--force-ansi-console`, `--no-ansi-color`, `--ffmpeg-binary-path`, `--decryption-engine`, `--use-ffmpeg-concat-demuxer`, `--live-pipe-mux`, `--ui-language`, `--urlprocessor-args`, `--morehelp`, `--disable-update-check` | — | non applicabili su Android (no terminale ANSI/ffmpeg esterno/update check: già disabilitato) |
+
 ## Build
 
 [![Android CI (Chromebook Plus)](https://github.com/SancioPanza88/N_m3u8DL-RE-Android/actions/workflows/build.yml/badge.svg)](https://github.com/SancioPanza88/N_m3u8DL-RE-Android/actions/workflows/build.yml)

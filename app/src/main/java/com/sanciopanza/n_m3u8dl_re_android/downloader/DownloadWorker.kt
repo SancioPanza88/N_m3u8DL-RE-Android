@@ -16,13 +16,19 @@ class DownloadWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         val threads = inputData.getInt(KEY_THREADS, defaultThreadCountForChromebookPlus())
         val headersRaw = inputData.getString(KEY_HEADERS) ?: ""
         val mux = inputData.getBoolean(KEY_MUX, true)
+        val retry = inputData.getInt(KEY_RETRY, 3)
+        val range = inputData.getString(KEY_RANGE) ?: ""
+        val subFmt = inputData.getString(KEY_SUBFMT) ?: "SRT"
         val facade = DownloaderFacade(applicationContext)
         val opts = DownloadOptions(
             url = url,
             saveName = saveName.ifBlank { "video" },
             threadCount = threads,
+            retryCount = retry,
             headers = SettingsStore.parseHeaders(headersRaw),
-            muxAfterDone = mux
+            muxAfterDone = mux,
+            customRange = range,
+            subFormat = subFmt
         )
         return when (val r = facade.run(opts, { done, total ->
             setProgressAsync(workDataOf(KEY_DONE to done, KEY_TOTAL to total))
@@ -40,6 +46,9 @@ class DownloadWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         const val KEY_THREADS = "threads"
         const val KEY_HEADERS = "headers"
         const val KEY_MUX = "mux"
+        const val KEY_RETRY = "retry"
+        const val KEY_RANGE = "range"
+        const val KEY_SUBFMT = "subfmt"
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"
         const val KEY_OUT = "out"
